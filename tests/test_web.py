@@ -57,6 +57,62 @@ def test_identity_key_empty():
     assert web._identity_key("") == ("unknown", "unknown")
 
 
+def test_identity_key_prefers_request_metadata_team():
+    # When requestMetadata carries a team, group by it — not the shared ARN.
+    rec = {
+        "requestMetadata": {"team": "marketing"},
+        "identity": {"arn": "arn:aws:sts::123:assumed-role/SharedProxyRole/sess-9"},
+    }
+    assert web._identity_key(rec["identity"]["arn"], rec) == ("team/marketing", "marketing")
+
+
+def test_identity_key_falls_back_to_arn_without_team():
+    # requestMetadata present but no team key → fall back to ARN collapsing.
+    rec = {
+        "requestMetadata": {"environment": "prod"},
+        "identity": {"arn": "arn:aws:sts::123:assumed-role/AppRole/sess-1"},
+    }
+    assert web._identity_key(rec["identity"]["arn"], rec) == ("assumed-role/AppRole", "AppRole")
+
+
+def test_identity_key_custom_team_meta_key(monkeypatch):
+    # BEDROCK_INSIGHTS_TEAM_KEY overrides which metadata key is the team.
+    monkeypatch.setattr(web, "_TEAM_META_KEY", "tenant")
+    rec = {"requestMetadata": {"tenant": "acme"}, "identity": {"arn": ""}}
+    assert web._identity_key("", rec) == ("team/acme", "acme")
+
+
+def test_identity_key_session_prefix_recovers_team(monkeypatch):
+    # No requestMetadata team (e.g. an InvokeModel call), but the STS session
+    # name encodes it as "litellm-<team>" → recover the team from the ARN.
+    monkeypatch.setattr(web, "_TEAM_SESSION_PREFIX", "litellm-")
+    arn = "arn:aws:sts::123:assumed-role/ProxyExecRole/litellm-sales"
+    assert web._identity_key(arn) == ("team/sales", "sales")
+
+
+def test_identity_key_session_prefix_prefers_request_metadata(monkeypatch):
+    # requestMetadata team still wins over the session-name prefix when present.
+    monkeypatch.setattr(web, "_TEAM_SESSION_PREFIX", "litellm-")
+    rec = {
+        "requestMetadata": {"team": "marketing"},
+        "identity": {"arn": "arn:aws:sts::123:assumed-role/Role/litellm-sales"},
+    }
+    assert web._identity_key(rec["identity"]["arn"], rec) == ("team/marketing", "marketing")
+
+
+def test_identity_key_session_prefix_no_match_falls_back(monkeypatch):
+    # Session name without the prefix → normal assumed-role collapsing.
+    monkeypatch.setattr(web, "_TEAM_SESSION_PREFIX", "litellm-")
+    arn = "arn:aws:sts::123:assumed-role/AppRole/sess-1"
+    assert web._identity_key(arn) == ("assumed-role/AppRole", "AppRole")
+
+
+def test_identity_key_session_prefix_disabled_by_default():
+    # Without the env var configured, session names are never parsed as teams.
+    arn = "arn:aws:sts::123:assumed-role/ProxyExecRole/litellm-sales"
+    assert web._identity_key(arn) == ("assumed-role/ProxyExecRole", "ProxyExecRole")
+
+
 # ── build_payload ────────────────────────────────────────────────────────────
 def test_build_payload_cost_and_totals(fixed_pricing):
     usage = {
