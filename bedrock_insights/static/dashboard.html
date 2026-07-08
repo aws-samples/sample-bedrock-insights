@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bedrock Insights</title>
+  <!-- nosemgrep: missing-integrity — inline data: URI favicon, not a network subresource; SRI does not apply -->
+  <link rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230d1117'/%3E%3Ctext x='16' y='22' font-size='18' font-family='sans-serif' font-weight='700' text-anchor='middle' fill='%23bc8cff'%3EB%3C/text%3E%3C/svg%3E" />
+  <script>
+    // Set the theme before first paint to avoid a flash of the wrong theme.
+    (function () {
+      try {
+        var t = localStorage.getItem("bi-theme");
+        if (!t) t = (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) ? "light" : "dark";
+        if (t === "light") document.documentElement.setAttribute("data-theme", "light");
+      } catch (e) { /* ignore */ }
+    })();
+  </script>
+  <style>
+    /*__APP_CSS__*/
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <div class="header-title">
+        <h1>Bedrock<span class="dot">.</span>Insights</h1>
+        <span class="status"><span class="pulse" id="pulse"></span><b id="updated"
+            aria-live="polite">connecting…</b></span>
+        <span class="meta-inline" id="meta-region" title=""><b id="region">—</b></span>
+        <span class="meta-inline meta-window" id="meta-window" style="display:none">Window <b id="label">—</b></span>
+      </div>
+      <div class="toolbar-actions">
+        <button class="gear icon-only" id="theme-toggle" title="Toggle light / dark theme"
+          aria-label="Toggle theme">🌓</button>
+        <button class="gear icon-only" id="share" title="Copy a shareable link to this view"
+          aria-label="Copy shareable link">🔗</button>
+        <button class="gear" id="export-json" title="Download current view as JSON" aria-label="Export JSON">↓
+          JSON</button>
+        <button class="gear" id="export-csv" title="Download current view as CSV" aria-label="Export CSV">↓
+          CSV</button>
+        <button class="gear" id="gear" title="Settings (g)" aria-haspopup="dialog" aria-expanded="false">⚙
+          Settings</button>
+      </div>
+    </header>
+
+    <div class="banner" id="banner" role="alert" aria-live="assertive"></div>
+    <div class="warn" id="warn" role="status" aria-live="polite"></div>
+
+    <div class="toolbar">
+      <div class="periods" id="periods" role="group" aria-label="Time window"></div>
+      <span class="toolbar-sep" aria-hidden="true"></span>
+      <div class="periods" id="region-sel" role="group" aria-label="Region"></div>
+    </div>
+    <div class="filter-chip" id="filter-chip"></div>
+
+    <div class="backdrop" id="backdrop" hidden></div>
+    <aside class="drawer" id="settings" role="dialog" aria-modal="true" aria-label="Settings" aria-hidden="true">
+      <div class="drawer-head">
+        <h2>Settings</h2>
+        <button class="iconbtn" id="set-close" aria-label="Close settings">✕</button>
+      </div>
+      <div class="drawer-body">
+        <h3>Time window</h3>
+        <div class="setrow">
+          <label for="set-since">Custom rolling window <span class="muted">— e.g. 2h, 30m, 1d (overrides the period
+              buttons)</span></label>
+          <div class="setactions">
+            <input id="set-since" type="text" placeholder="leave blank to use the period buttons"
+              style="max-width:240px">
+            <button id="set-window-apply">Apply</button>
+            <button id="set-window-clear" class="secondary">Clear</button>
+          </div>
+        </div>
+
+        <h3 style="margin-top:18px">Alerts</h3>
+        <div class="setrow">
+          <label for="set-threshold">Window threshold ($) <span class="muted">— alert once when the current view's spend
+              crosses this</span></label>
+          <input id="set-threshold" type="number" step="0.01" min="0" placeholder="disabled">
+        </div>
+        <div class="setrow">
+          <label for="set-daily-budget">Daily budget ($) <span class="muted">— warns at 80%, critical at 100% (per
+              day)</span></label>
+          <input id="set-daily-budget" type="number" step="0.01" min="0" placeholder="disabled">
+        </div>
+        <div class="setrow">
+          <label for="set-monthly-budget">Monthly budget ($) <span class="muted">— warns at 80%, critical at 100% (per
+              month)</span></label>
+          <input id="set-monthly-budget" type="number" step="0.01" min="0" placeholder="disabled">
+        </div>
+        <div class="setrow">
+          <label for="set-webhook">Webhook URL <span class="muted">(Slack incoming webhook or any JSON
+              endpoint)</span></label>
+          <input id="set-webhook" type="text" placeholder="https://hooks.slack.com/services/...">
+        </div>
+        <div class="setrow">
+          <label for="set-sns">Amazon SNS Topic ARN <span class="muted">(fans out to email, SMS, Lambda, SQS,
+              …)</span></label>
+          <input id="set-sns" type="text" placeholder="arn:aws:sns:us-east-1:123456789012:my-topic">
+        </div>
+        <div class="setactions">
+          <button id="set-save">Save</button>
+          <button id="set-test" class="secondary">Send test</button>
+          <span id="set-status" class="setstatus" aria-live="polite"></span>
+        </div>
+        <div class="setnote">Alerts fire once when spend crosses the threshold (re-armed when you change settings). The
+          server POSTs to the webhook / publishes to the SNS topic, so only use ones you trust — and don't expose the
+          dashboard publicly. The process needs <code>sns:Publish</code> permission on the topic.</div>
+
+        <h3 style="margin-top:18px">Display</h3>
+        <div class="setrow">
+          <label for="set-refresh">Dashboard refresh interval (seconds)</label>
+          <div class="setactions">
+            <input id="set-refresh" type="number" min="2" step="1" style="max-width:120px">
+            <button id="set-refresh-apply">Apply</button>
+          </div>
+        </div>
+
+        <h3 style="margin-top:18px">Runtime <span class="muted">(set at launch — restart with CLI flags to
+            change)</span></h3>
+        <div class="setnote">
+          Regions monitored: <b id="info-regions">—</b><br>
+          Server bind address (<code>--host</code>/<code>--port</code>): <b id="info-bind">—</b><br>
+          CloudWatch poll interval: <b id="info-poll">—</b>s
+        </div>
+
+        <h3 style="margin-top:18px">Keyboard</h3>
+        <div class="setnote">
+          <b>g</b> settings · <b>Esc</b> close · <b>r</b> refresh now ·
+          <b>1</b> Overview · <b>2</b> Recent · <b>[</b> / <b>]</b> cycle time window
+        </div>
+      </div>
+    </aside>
+
+    <div class="cards">
+      <div class="card cost">
+        <div class="k">Estimated Cost</div>
+        <div class="v skeleton" id="c-cost"></div>
+        <div class="delta" id="c-delta"></div>
+      </div>
+      <div class="card calls">
+        <div class="k">Total Calls</div>
+        <div class="v skeleton" id="c-calls"></div>
+      </div>
+      <div class="card tokens">
+        <div class="k">Total Tokens</div>
+        <div class="v skeleton" id="c-tokens"></div>
+      </div>
+      <div class="card">
+        <div class="k">Avg $ / Call</div>
+        <div class="v small skeleton" id="c-avgcost"></div>
+      </div>
+      <div class="card">
+        <div class="k">Burn Rate</div>
+        <div class="v small skeleton" id="c-burn"></div>
+      </div>
+      <div class="card">
+        <div class="k">Proj. $ / Day</div>
+        <div class="v small skeleton" id="c-proj" title="Run-rate estimate"></div>
+      </div>
+      <div class="card errrate" id="card-err">
+        <div class="k">Error Rate</div>
+        <div class="v small skeleton" id="c-err"></div>
+      </div>
+      <div class="card" id="card-cache" style="display:none">
+        <div class="k">Cache Hit Rate</div>
+        <div class="v small" id="c-cache">—</div>
+      </div>
+      <div class="card tokens" id="card-saved" style="display:none">
+        <div class="k">Cache Savings</div>
+        <div class="v small" id="c-saved" title="Estimated saving vs. paying the full input rate for cache-read tokens">
+          —</div>
+      </div>
+    </div>
+
+    <div class="panel budgets" id="panel-budgets" style="display:none">
+      <div class="budget-row" id="budget-daily" style="display:none">
+        <div class="budget-label">Daily budget<span class="budget-amt" id="budget-daily-amt"></span></div>
+        <div class="budget-track"><span class="budget-fill" id="budget-daily-fill"></span></div>
+      </div>
+      <div class="budget-row" id="budget-monthly" style="display:none">
+        <div class="budget-label">Monthly budget<span class="budget-amt" id="budget-monthly-amt"></span></div>
+        <div class="budget-track"><span class="budget-fill" id="budget-monthly-fill"></span></div>
+      </div>
+    </div>
+
+    <div class="tabs" id="tabs" role="tablist" aria-label="Views">
+      <button class="tab active" id="tab-overview" data-tab="overview" role="tab" aria-selected="true"
+        aria-controls="view-overview">Overview</button>
+      <button class="tab" id="tab-recent" data-tab="recent" role="tab" aria-selected="false"
+        aria-controls="view-recent">Recent</button>
+    </div>
+
+    <div id="view-overview" role="tabpanel" aria-labelledby="tab-overview">
+      <div class="panel" id="chart-panel">
+        <div class="panel-head"><span>Cost over time</span><span class="sub" id="chart-meta"></span></div>
+        <canvas id="chart" height="160"></canvas>
+        <div class="tip" id="chart-tip" role="status"></div>
+      </div>
+
+      <div id="content"></div>
+
+      <div class="grid2">
+        <div class="panel mini">
+          <h3>By IAM Identity</h3>
+          <div id="bd-identity"></div>
+        </div>
+        <div class="panel mini">
+          <h3>By Region</h3>
+          <div id="bd-region"></div>
+        </div>
+        <div class="panel mini">
+          <h3>By Operation</h3>
+          <div id="bd-operation"></div>
+        </div>
+        <div class="panel mini" id="panel-errors" style="display:none">
+          <h3>Errors</h3>
+          <div id="bd-errors"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-recent" role="tabpanel" aria-labelledby="tab-recent" style="display:none">
+      <div class="panel">
+        <div class="panel-head"><span>Recent invocations</span><span class="sub" id="recent-meta"></span></div>
+        <div id="recent"></div>
+      </div>
+    </div>
+
+    <footer id="foot"></footer>
+  </div>
+
+  <div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
+
+  <script>//__APP_JS__</script>
+</body>
+
+</html>

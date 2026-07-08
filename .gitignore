@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+env/
+.env
+
+# uv
+uv.lock
+
+# Distribution / packaging
+*.whl
+*.tar.gz
+
+# Tests & coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Type checking
+.mypy_cache/
+.ruff_cache/
+
+# macOS
+.DS_Store
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+
+# Local dev / scratch files
+test.py
+test_prices.json
+
+# Local-only blog draft (not part of the published project)
+BLOG.md

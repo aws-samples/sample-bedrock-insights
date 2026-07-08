@@ -1,0 +1,76 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "bedrock-insights"
+dynamic = ["version"]
+description = "Real-time token usage and cost monitoring for AWS Bedrock"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+authors = [{ name = "bedrock-insights authors" }]
+keywords = ["aws", "bedrock", "cloudwatch", "monitoring", "cost", "tokens", "dashboard", "llm"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: System :: Monitoring",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "boto3[crt]>=1.34.0",
+    "click>=8.1.0",
+    "rich>=13.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/aws-samples/sample-bedrock-insights"
+Repository = "https://github.com/aws-samples/sample-bedrock-insights"
+Issues = "https://github.com/aws-samples/sample-bedrock-insights/issues"
+
+[project.scripts]
+bedrock-insights = "bedrock_insights.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "ruff>=0.6"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["bedrock_insights"]
+
+[tool.hatch.build.targets.sdist]
+# Keep the source distribution lean: ship the package, tests, deploy template,
+# and project docs — not the blog, screenshots, CI config, or caches.
+include = [
+    "bedrock_insights",
+    "tests",
+    "deploy",
+    "README.md",
+    "LICENSE",
+    "pyproject.toml",
+]
+
+[tool.hatch.version]
+path = "bedrock_insights/__init__.py"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 120
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501", "E741"]

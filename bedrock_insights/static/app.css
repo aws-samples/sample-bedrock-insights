@@ -1,0 +1,1053 @@
+:root {
+  --bg: #0d1117;
+  --panel: #161b22;
+  --panel-2: #1c2230;
+  --border: #2a3340;
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --accent: #58a6ff;
+  --green: #3fb950;
+  --yellow: #d29922;
+  --magenta: #bc8cff;
+  --red: #f85149;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+  font-size: 14px;
+}
+.wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 28px 20px 60px;
+}
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.header-title {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+h1 {
+  font-size: 20px;
+  margin: 0;
+  font-weight: 650;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+h1 .dot {
+  color: var(--accent);
+}
+/* A single compact region summary next to the title (e.g. "7 regions"),
+   full list only on hover via the title attribute — avoids repeating the
+   region buttons below and keeps the header to one line. */
+.meta-inline {
+  color: var(--muted);
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.meta-inline b {
+  color: var(--text);
+  font-weight: 600;
+}
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+.status b {
+  color: var(--text);
+  font-weight: 600;
+}
+.pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 0 rgba(63, 185, 80, 0.6);
+  animation: pulse 2s infinite;
+}
+.pulse.stale {
+  background: var(--red);
+  animation: none;
+}
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(63, 185, 80, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(63, 185, 80, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(63, 185, 80, 0);
+  }
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin: 22px 0;
+}
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+.card .k {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.card .v {
+  font-size: 26px;
+  font-weight: 680;
+  margin-top: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.card.cost .v {
+  color: var(--magenta);
+}
+.card.calls .v {
+  color: var(--text);
+}
+.card.tokens .v {
+  color: var(--green);
+}
+.card .v.small {
+  font-size: 20px;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 22px;
+  position: relative;
+}
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.panel-head .sub {
+  text-transform: none;
+  letter-spacing: 0;
+}
+canvas {
+  width: 100%;
+  display: block;
+}
+.share {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.share .track {
+  width: 60px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--border);
+  overflow: hidden;
+  flex: none;
+}
+.share .track .fill {
+  display: block;
+  height: 100%;
+  background: var(--magenta);
+  opacity: 0.7;
+  border-radius: 3px;
+}
+
+.card.errrate .v {
+  color: var(--green);
+}
+.card.errrate.has-errors .v {
+  color: var(--red);
+}
+
+.grid2 > .panel {
+  /* Grid tracks default to a min-width of "auto" (the content's min-content
+     size), so a wide table inside a panel can force its column — and the
+     whole row — wider than the page instead of being clipped/scrolled. This
+     lets the track actually shrink to the gap; the table's own overflow-x
+     (below) then takes over and scrolls internally instead of overflowing. */
+  min-width: 0;
+}
+.grid2 {
+  display: grid;
+  /* Fixed 2-up grid: each panel's table (region/operation names, counts,
+     cost) needs more room than a 4-column layout gives it at typical
+     widths — 4-up squeezes columns so tight that numbers get clipped.
+     2 per row keeps every panel readable; 1 column on narrow screens. */
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-top: 22px;
+}
+@media (max-width: 640px) {
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+}
+.mini h3 {
+  margin: 0 0 10px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.mini table {
+  border: none;
+  border-radius: 0;
+}
+.mini thead th {
+  padding: 6px 8px;
+}
+.mini tbody td {
+  padding: 7px 8px;
+}
+.mini .empty {
+  padding: 18px 0;
+}
+.err-code {
+  color: var(--red);
+  font-weight: 600;
+  text-align: left;
+}
+.err-rate-line {
+  color: var(--muted);
+  font-size: 12.5px;
+  margin-bottom: 10px;
+}
+.err-rate-line b {
+  color: var(--red);
+}
+
+.banner {
+  display: none;
+  background: rgba(248, 81, 73, 0.12);
+  border: 1px solid var(--red);
+  color: #ffb4ad;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin: 4px 0 18px;
+  font-weight: 600;
+}
+.banner.show {
+  display: block;
+}
+
+.warn {
+  display: none;
+  background: rgba(210, 153, 34, 0.12);
+  border: 1px solid var(--yellow);
+  color: #f0c674;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin: 4px 0 16px;
+  font-size: 13px;
+}
+.warn.show {
+  display: block;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0 4px;
+  flex-wrap: wrap;
+}
+.toolbar-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  flex: none;
+}
+.periods {
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.periods button {
+  background: var(--panel);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.periods button:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+.periods button.active {
+  background: var(--accent);
+  color: #06223f;
+  border-color: var(--accent);
+  font-weight: 650;
+}
+.filter-chip {
+  display: none;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.filter-chip.show {
+  display: flex;
+}
+.chip {
+  background: rgba(88, 166, 255, 0.12);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 12.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.chip button {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+  line-height: 1;
+}
+tr.clickable {
+  cursor: pointer;
+}
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.gear {
+  background: var(--panel);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.gear:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+.gear.icon-only {
+  padding: 6px 9px;
+  font-size: 14px;
+  line-height: 1;
+}
+.settings h3 {
+  margin: 0 0 14px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+}
+.setrow {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 14px;
+  max-width: 520px;
+}
+.setrow label {
+  font-size: 12.5px;
+  color: var(--text);
+}
+.setrow label .muted {
+  color: var(--muted);
+}
+.setrow input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 8px 10px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+}
+.tabs {
+  display: flex;
+  gap: 6px;
+  margin: 22px 0 4px;
+  border-bottom: 1px solid var(--border);
+}
+.tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  padding: 8px 14px;
+  margin-bottom: -1px;
+}
+.tab:hover {
+  color: var(--text);
+}
+.tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+td .err-code {
+  color: var(--red);
+}
+td.err-cell {
+  color: var(--red);
+}
+.setrow input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.setactions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.setactions button {
+  background: var(--accent);
+  color: #06223f;
+  border: none;
+  border-radius: 7px;
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.setactions button.secondary {
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.setactions button:hover {
+  filter: brightness(1.08);
+}
+.setstatus {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.setstatus.ok {
+  color: var(--green);
+}
+.setstatus.bad {
+  color: var(--red);
+}
+.setnote {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 12px;
+  max-width: 520px;
+}
+.tip {
+  position: absolute;
+  pointer-events: none;
+  background: #0a0d12;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 9px;
+  font-size: 11.5px;
+  color: var(--text);
+  white-space: nowrap;
+  display: none;
+  z-index: 10;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+.tip .tcost {
+  color: var(--magenta);
+  font-weight: 600;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+thead th {
+  text-align: right;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+}
+thead th:first-child {
+  text-align: left;
+}
+tbody td {
+  padding: 11px 14px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  border-bottom: 1px solid rgba(42, 51, 64, 0.5);
+}
+tbody td:first-child {
+  text-align: left;
+  color: var(--accent);
+  font-weight: 600;
+}
+tbody tr:last-child td {
+  border-bottom: none;
+}
+tbody tr:hover {
+  background: var(--panel-2);
+}
+.col-in {
+  color: var(--green);
+}
+.col-out {
+  color: var(--yellow);
+}
+.col-cache {
+  color: var(--accent);
+}
+.col-cost {
+  color: var(--magenta);
+  font-weight: 600;
+}
+.na {
+  color: var(--muted);
+  font-style: italic;
+}
+.badge {
+  font-size: 10px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 1px 5px;
+  margin-left: 7px;
+  vertical-align: middle;
+}
+tfoot td {
+  padding: 13px 14px;
+  text-align: right;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  border-top: 2px solid var(--border);
+  background: var(--panel-2);
+}
+tfoot td:first-child {
+  text-align: left;
+}
+
+.empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 50px 0;
+  font-style: italic;
+}
+.err {
+  background: rgba(248, 81, 73, 0.1);
+  border: 1px solid var(--red);
+  color: #ffb4ad;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+footer {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 18px;
+  text-align: right;
+}
+
+/* ── Accessibility: visible keyboard focus ─────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+.tab[aria-selected="true"] {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+/* ── Skeleton loading shimmer ──────────────────────────────────────────── */
+.skeleton {
+  display: inline-block;
+  min-width: 72px;
+  height: 1em;
+  vertical-align: middle;
+  border-radius: 6px;
+  color: transparent !important;
+  background: linear-gradient(
+    90deg,
+    var(--panel-2) 25%,
+    #243049 50%,
+    var(--panel-2) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+}
+.v.small.skeleton {
+  min-width: 56px;
+}
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ── Settings slide-over drawer ────────────────────────────────────────── */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(1, 4, 9, 0.6);
+  z-index: 40;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+.backdrop.show {
+  opacity: 1;
+}
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 420px;
+  max-width: 92vw;
+  background: var(--panel);
+  border-left: 1px solid var(--border);
+  z-index: 50;
+  transform: translateX(100%);
+  transition: transform 0.22s ease;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.45);
+}
+.drawer.open {
+  transform: translateX(0);
+}
+.drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.drawer-head h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+}
+.drawer-body {
+  padding: 18px;
+  overflow-y: auto;
+}
+.iconbtn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 18px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+.iconbtn:hover {
+  color: var(--text);
+  background: var(--panel-2);
+}
+
+/* ── Chart hover (cursor hint) ─────────────────────────────────────────── */
+#chart {
+  cursor: crosshair;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+  .pulse {
+    animation: none;
+  }
+}
+
+/* ── Light theme ─────────────────────────────────────────────────────────── */
+:root[data-theme="light"] {
+  --bg: #f6f8fa;
+  --panel: #ffffff;
+  --panel-2: #eef1f5;
+  --border: #d0d7de;
+  --text: #1f2328;
+  --muted: #59636e;
+  --accent: #0969da;
+  --green: #1a7f37;
+  --yellow: #9a6700;
+  --magenta: #8250df;
+  --red: #cf222e;
+}
+:root[data-theme="light"] body {
+  background: var(--bg);
+}
+:root[data-theme="light"] .banner {
+  color: #9a3412;
+}
+:root[data-theme="light"] .warn {
+  color: #7a5b00;
+}
+:root[data-theme="light"] .periods button.active,
+:root[data-theme="light"] .setactions button:not(.secondary) {
+  color: #ffffff;
+}
+
+/* ── Card hierarchy + hover lift ─────────────────────────────────────────── */
+.card {
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    border-color 0.12s ease;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+}
+.card.cost {
+  border-left: 3px solid var(--magenta);
+}
+.card.calls {
+  border-left: 3px solid var(--accent);
+}
+.card.tokens {
+  border-left: 3px solid var(--green);
+}
+
+/* Skeleton tone that adapts to either theme. */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--panel-2) 25%,
+    var(--border) 50%,
+    var(--panel-2) 75%
+  );
+  background-size: 200% 100%;
+}
+
+/* ── Sortable table headers ──────────────────────────────────────────────── */
+th.sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+th.sortable:hover {
+  color: var(--text);
+}
+th .arrow {
+  font-size: 9px;
+  margin-left: 3px;
+  opacity: 0.8;
+}
+
+/* ── Per-row sparkline ───────────────────────────────────────────────────── */
+.spark {
+  display: inline-block;
+  vertical-align: middle;
+}
+.spark polyline {
+  fill: none;
+  stroke: var(--magenta);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+/* ── Toast notifications ─────────────────────────────────────────────────── */
+.toasts {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+.toast {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  max-width: 340px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+.toast.ok {
+  border-left-color: var(--green);
+}
+.toast.bad {
+  border-left-color: var(--red);
+}
+
+/* ── Animated tab underline ──────────────────────────────────────────────── */
+.tabs {
+  position: relative;
+}
+.tab.active {
+  border-bottom-color: transparent;
+}
+.tab-underline {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--accent);
+  transition:
+    left 0.2s ease,
+    width 0.2s ease;
+}
+
+/* ── Sticky toolbar + horizontal scroll for wide tables ──────────────────── */
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--bg);
+}
+#content,
+#recent,
+#bd-identity,
+#bd-region,
+#bd-operation,
+#bd-errors {
+  overflow-x: auto;
+}
+
+/* ── Responsive / mobile ─────────────────────────────────────────────────── */
+@media (max-width: 760px) {
+  .wrap {
+    padding: 18px 12px 48px;
+  }
+  .cards {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .card .v {
+    font-size: 22px;
+  }
+  .card .v.small {
+    font-size: 17px;
+  }
+  .drawer {
+    width: 100%;
+    max-width: 100%;
+  }
+  .meta {
+    font-size: 11.5px;
+    gap: 10px;
+  }
+  table {
+    font-size: 12.5px;
+  }
+  tbody td,
+  thead th {
+    padding: 8px 10px;
+  }
+  tbody td:first-child,
+  thead th:first-child,
+  tfoot td:first-child {
+    position: sticky;
+    left: 0;
+    background: var(--panel);
+  }
+  tfoot td:first-child {
+    background: var(--panel-2);
+  }
+}
+
+/* ── Recent: expandable request/response detail ──────────────────────────── */
+.rec-row {
+  cursor: pointer;
+}
+.rec-row .caret {
+  color: var(--muted);
+  transition: transform 0.15s ease;
+}
+.rec-row.expanded .caret {
+  transform: rotate(90deg);
+  color: var(--accent);
+}
+.rec-detail > td {
+  padding: 0 14px 14px;
+  background: var(--panel-2);
+}
+.rec-body h4 {
+  margin: 12px 0 6px;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+}
+.rec-body pre {
+  margin: 0;
+  max-height: 280px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.rec-body .muted {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.rec-note {
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* ── Period-over-period delta on the cost card ───────────────────────────── */
+.delta {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.delta.up {
+  color: var(--red);
+} /* spend went up → bad */
+.delta.down {
+  color: var(--green);
+} /* spend went down → good */
+.delta.flat {
+  color: var(--muted);
+}
+.delta.muted {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+/* ── Budget progress panel ───────────────────────────────────────────────── */
+.panel.budgets {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+}
+.budget-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.budget-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.budget-amt {
+  color: var(--text);
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.budget-track {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--border);
+  overflow: hidden;
+}
+.budget-fill {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+.budget-fill.warning {
+  background: var(--yellow);
+}
+.budget-fill.critical {
+  background: var(--red);
+}
+
+/* ── Persistent toast (stays until dismissed) ────────────────────────────── */
+.toast.persistent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.toast.persistent span {
+  flex: 1;
+}
+.toast.persistent button {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0;
+}
+.toast.persistent button:hover {
+  color: var(--text);
+}
