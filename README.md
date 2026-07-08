@@ -16,7 +16,7 @@ Install from source:
 
 ```bash
 git clone https://github.com/aws-samples/sample-bedrock-insights.git
-cd bedrock-insights
+cd sample-bedrock-insights
 pip install .
 ```
 
@@ -144,7 +144,7 @@ Open `https://<dashboard-url>/?token=<your-token>` once — the page stores the 
 - A **CloudFront distribution** in front of it, giving you HTTPS (via the default `*.cloudfront.net` certificate) and acting as the single entry point.
 - A security group that admits **only the CloudFront managed prefix list** — the public internet can't reach the instance directly, even though it has a public IP. The dashboard token remains the user-facing gate. A small Lambda-backed custom resource resolves the region-specific prefix list ID at deploy time.
 - The **Bedrock invocation log group**, the role Bedrock assumes to write to it, and a Lambda-backed custom resource that enables model invocation logging in the stack's region (there's no native CloudFormation resource for it).
-- A **read-only IAM instance role** (just `logs:FilterLogEvents`, `bedrock:List*`, and `pricing:*`) plus SSM Session Manager access for debugging — no SSH port is opened.
+- A **read-only IAM instance role** (`logs:FilterLogEvents`, `bedrock:List*`, `pricing:ListPriceLists`/`GetPriceListFileUrl`/`GetProducts`, plus `sns:Publish` for the Settings panel's SNS alerts) and SSM Session Manager access for debugging — no SSH port is opened.
 
 ### Parameters
 
@@ -212,7 +212,7 @@ For a model not yet in either source, the dashboard shows `N/A` for cost; you ca
 - AWS credentials with (read-only — this is all a plain launch needs):
   - `logs:FilterLogEvents` on `/aws/bedrock/model-invocations`
   - `bedrock:ListFoundationModels` and `bedrock:ListInferenceProfiles` for live model discovery
-  - `pricing:ListPriceLists` and `pricing:GetPriceListFileUrl` for live pricing
+  - `pricing:ListPriceLists` and `pricing:GetPriceListFileUrl` for Anthropic/Claude pricing, and `pricing:GetProducts` for the Meta/Mistral/DeepSeek/Nova pricing fallback
 - Bedrock model invocation logging enabled (run `--setup` if not)
 
 **Only needed for `--setup` / `--auto-setup`** (never required for normal launches):

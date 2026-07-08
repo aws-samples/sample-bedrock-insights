@@ -290,11 +290,14 @@ Resources:
                   - bedrock:ListFoundationModels
                   - bedrock:ListInferenceProfiles
                 Resource: "*"
-              # Point-in-time on-demand pricing lookups.
+              # Point-in-time on-demand pricing lookups: ListPriceLists/
+              # GetPriceListFileUrl for the Anthropic/Claude CSV, GetProducts
+              # for the Meta/Mistral/DeepSeek/Nova fallback.
               - Effect: Allow
                 Action:
                   - pricing:ListPriceLists
                   - pricing:GetPriceListFileUrl
+                  - pricing:GetProducts
                 Resource: "*"
               # Optional: publish alerts to an SNS topic configured in the
               # dashboard's Settings panel at runtime, so the topic ARN isn't
