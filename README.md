@@ -197,6 +197,13 @@ A background poller queries each region (concurrently) on an interval (5 s by de
 
 Prompt/response bodies are **not** part of that fact and are never stored: the Recent tab fetches a single event's bodies live from CloudWatch only when you expand it (a bounded lookup — a narrow time window with a scan cap), and `--no-content` turns that off server-side.
 
+### Grouping by team / tenant
+
+The **by-identity** breakdown normally groups on the IAM principal from the log record's `identity.arn`. When many teams share one IAM role — e.g. a proxy like LiteLLM calling Bedrock under a single IRSA role — the ARN can't tell them apart. Two opt-in mechanisms recover the team:
+
+- **requestMetadata** — have the caller stamp [`requestMetadata`](https://docs.aws.amazon.com/bedrock/latest/userguide/cost-mgmt-request-metadata.html) on each Bedrock call, e.g. `{"team": "marketing"}`. Bedrock records it verbatim in the invocation log, and it's preferred over the ARN. The key defaults to `team`; override with `BEDROCK_INSIGHTS_TEAM_KEY`. Calls without the tag still fall back to the IAM principal, so mixed traffic works.
+- **STS session name** — some calls can't carry `requestMetadata` (notably `InvokeModel`, which LiteLLM forwards it only on the `Converse` path). If the proxy instead encodes the team in the STS session name (e.g. `RoleSessionName="litellm-<team>"`), that name survives in `identity.arn`. Set `BEDROCK_INSIGHTS_TEAM_SESSION_PREFIX` (e.g. `litellm-`) to strip the prefix and group by team; empty (default) disables it.
+
 ## Pricing
 
 Prices are fetched from two AWS sources at startup and cached to disk for 24 hours at `~/.config/bedrock-insights/pricing_cache.json` (per region):

@@ -153,18 +153,51 @@ def _record_cost_tokens(r: dict, region: str | None = None) -> tuple[float, int,
     return cost, inp, out, cw, cr, (not p.needs_pricing), p.display_name, saved
 
 
-def _identity_key(arn: str) -> tuple[str, str]:
-    """Return (group_key, display_label) for an IAM principal ARN.
+# Which requestMetadata key carries the caller's team/tenant. Bedrock records
+# requestMetadata verbatim in the invocation log; a proxy (e.g. LiteLLM) can
+# stamp {"team": "<alias>"} per call. Override with BEDROCK_INSIGHTS_TEAM_KEY.
+_TEAM_META_KEY = os.environ.get("BEDROCK_INSIGHTS_TEAM_KEY", "team")
 
-    Sessions of the same assumed role collapse to one group:
-      arn:aws:sts::123:assumed-role/MyRole/session  → ("assumed-role/MyRole", "MyRole")
+# Opt-in: recover the team from an assumed-role session name when requestMetadata
+# is absent. Some proxies name the STS session "<prefix><team>" (e.g. LiteLLM
+# assumes a role with RoleSessionName="litellm-<team>"), and calls that bypass
+# requestMetadata (e.g. Bedrock InvokeModel, which doesn't carry it) still expose
+# that session name in identity.arn. Set BEDROCK_INSIGHTS_TEAM_SESSION_PREFIX to
+# the prefix (e.g. "litellm-") to strip it and group by team. Empty = disabled.
+_TEAM_SESSION_PREFIX = os.environ.get("BEDROCK_INSIGHTS_TEAM_SESSION_PREFIX", "")
+
+
+def _identity_key(arn: str, record: dict | None = None) -> tuple[str, str]:
+    """Return (group_key, display_label) for a Bedrock invocation.
+
+    Prefer the per-request team tag from requestMetadata when present — this is
+    the real caller when many teams share one IAM role (e.g. a proxy's IRSA
+    role), which the ARN alone can't distinguish. Falls back to the IAM
+    principal ARN otherwise.
+
+      requestMetadata.team = "marketing"             → ("team/marketing", "marketing")
+      arn:aws:sts::123:assumed-role/MyRole/session   → ("assumed-role/MyRole", "MyRole")
       arn:aws:iam::123:user/alice                    → ("user/alice", "alice")
+
+    When BEDROCK_INSIGHTS_TEAM_SESSION_PREFIX is set and requestMetadata carries
+    no team, an assumed-role session named "<prefix><team>" resolves to that team:
+
+      prefix="litellm-", .../assumed-role/Role/litellm-sales → ("team/sales", "sales")
     """
+    if record is not None:
+        team = (record.get("requestMetadata") or {}).get(_TEAM_META_KEY)
+        if team:
+            return "team/" + team, team
     if not arn:
         return "unknown", "unknown"
     resource = arn.split(":")[-1]
     parts = resource.split("/")
     if parts[0] == "assumed-role" and len(parts) >= 2:
+        if _TEAM_SESSION_PREFIX and len(parts) >= 3 \
+                and parts[2].startswith(_TEAM_SESSION_PREFIX) \
+                and len(parts[2]) > len(_TEAM_SESSION_PREFIX):
+            team = parts[2][len(_TEAM_SESSION_PREFIX):]
+            return "team/" + team, team
         return "assumed-role/" + parts[1], parts[1]
     if len(parts) >= 2:
         return resource, parts[-1]
@@ -813,7 +846,7 @@ class UsageMonitor:
                 raw_id = r.get("modelId", "unknown")
                 rec_region = r.get("region") or client_region
                 cost, inp, out, cw, cr, known, display, saved = _record_cost_tokens(r, rec_region)
-                ident_key, ident_label = _identity_key((r.get("identity") or {}).get("arn", ""))
+                ident_key, ident_label = _identity_key((r.get("identity") or {}).get("arn", ""), r)
                 fact = {
                     "key":          key,
                     "t":            _record_ms(r),
